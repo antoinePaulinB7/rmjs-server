@@ -1,5 +1,9 @@
 {
+  "engines": {
+    "node": "14.13.1"
+  },
   "dependencies": {
+    "glitcheroo": "^1.2.1",
     "rot-js": "^2.1.5",
     "socket.io": "^4.0.0"
   }

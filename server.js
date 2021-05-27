@@ -1,56 +1,58 @@
-const io = require('socket.io')({
+const io = require("socket.io")({
   cors: {
-    origin: '*',
+    origin: "*",
   },
 })
 
-const { initGame, joinGame, gameLoop, handleInput } = require('./game')
-const { FRAME_RATE, MAX_PLAYERS } = require('./constants')
-const { makeid } = require('./utils')
-const ServerMessages = require('./server-messages')
+console.log(process.env)
+
+const { initGame, joinGame, gameLoop, handleInput } = require("./game")
+const { FRAME_RATE, MAX_PLAYERS } = require("./constants")
+const { makeid } = require("./utils")
+const ServerMessages = require("./server-messages")
 
 const state = {}
 const clientRooms = {}
 
-const logMemory = process.argv.includes('memory')
+const logMemory = process.argv.includes("memory")
 
 const port = process.env.PORT || 3000
 
 if (logMemory) {
   setInterval(() => {
     const used = process.memoryUsage()
-    console.log('Memory Usage')
+    console.log("Memory Usage")
     for (let key in used) {
       console.log(
-        `${key} ${Math.round((used[key] / 1024 / 1024) * 100) / 100} MB`,
+        `${key} ${Math.round((used[key] / 1024 / 1024) * 100) / 100} MB`
       )
     }
-    console.log(' ')
+    console.log(" ")
   }, 1000)
 }
 
-io.on('connection', (client) => {
-  client.on('keydown', handleKeypress)
-  client.on('keypress', handleKeypress)
-  client.on('newGame', handleNewGame)
-  client.on('joinGame', handleJoinGame)
+io.on("connection", (client) => {
+  client.on("keydown", handleKeypress)
+  client.on("keypress", handleKeypress)
+  client.on("newGame", handleNewGame)
+  client.on("joinGame", handleJoinGame)
 
   function handleJoinGame(gameCode) {
     console.log(`player attempting to join ${gameCode}`)
 
     console.log(
       io.sockets.adapter.rooms,
-      io.sockets.adapter.rooms.get(gameCode),
+      io.sockets.adapter.rooms.get(gameCode)
     )
 
     const room = io.sockets.adapter.rooms.get(gameCode)
 
     let allUsers
     if (!room) {
-      client.emit('unknownGame')
+      client.emit("unknownGame")
       return
     } else if (room.size > MAX_PLAYERS - 1) {
-      client.emit('tooManyPlayers')
+      client.emit("tooManyPlayers")
       return
     }
 
@@ -58,9 +60,9 @@ io.on('connection', (client) => {
 
     client.join(gameCode)
     client.number = 2
-    client.emit('init', 2)
+    client.emit("init", 2)
 
-    client.emit('gameCode', gameCode)
+    client.emit("gameCode", gameCode)
 
     joinGame(state[gameCode], client.id)
   }
@@ -68,7 +70,7 @@ io.on('connection', (client) => {
   function handleNewGame() {
     let roomName = makeid(5)
     clientRooms[client.id] = roomName
-    client.emit('gameCode', roomName)
+    client.emit("gameCode", roomName)
 
     state[roomName] = initGame(client.id)
 
@@ -76,7 +78,7 @@ io.on('connection', (client) => {
 
     client.join(roomName)
     client.number = 1
-    client.emit('init', 1)
+    client.emit("init", 1)
 
     startGameInterval(roomName)
   }
@@ -127,15 +129,15 @@ function emitGameState(clientId, state) {
   let stateData = state.getJSON(clientId)
 
   if (stateData == ServerMessages.PLAYER_DIED) {
-    clientSocket.emit('gameOver', '')
+    clientSocket.emit("gameOver", "")
     clientSocket.leave(clientRooms[clientSocket.id])
   }
-  clientSocket.emit('gameState', state.getJSON(clientId))
+  clientSocket.emit("gameState", state.getJSON(clientId))
 }
 
 function emitGameOver(clientId, winner) {
   const clientSocket = io.sockets.sockets.get(clientId)
-  clientSocket.emit('gameOver', JSON.stringify({ winner }))
+  clientSocket.emit("gameOver", JSON.stringify({ winner }))
 }
 
 io.listen(port)
