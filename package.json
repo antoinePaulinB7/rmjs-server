@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "start": "node server"
+  },
   "engines": {
     "node": "14.13.1"
   },
